@@ -1,0 +1,38 @@
+{
+    "routes": [
+        {
+            "id": "1",
+            "name": "Tambaram to DACE",
+            "duration": "45 mins",
+            "buses": 2
+        },
+        {
+            "id": "2",
+            "name": "Guindy to DACE",
+            "duration": "55 mins",
+            "buses": 1
+        },
+        {
+            "id": "3",
+            "name": "Central to DACE",
+            "duration": "90 mins",
+            "buses": 3
+        }
+    ],
+    "buses": [
+        {
+            "id": "1",
+            "routeId": "1",
+            "plateNumber": "TN 01 AB 1234",
+            "driver": "Ramesh",
+            "status": "active"
+        },
+        {
+            "id": "2",
+            "routeId": "1",
+            "plateNumber": "TN 02 AS 4567",
+            "driver": "Kumar",
+            "status": "maintenance"
+        }
+    ]
+}
