@@ -1,1 +1,22 @@
 node_modules
+<<<<<<< HEAD
+=======
+dist
+dist-ssr
+*.local
+
+# Environment variables — never commit these
+.env.local
+.env*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+>>>>>>> 10fbd9b (feat: integrate Supabase, add vercel.json and SQL seed)

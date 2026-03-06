@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Search, Bus, Phone, User, Clock, MapPin, ChevronDown, ChevronUp, X, History } from "lucide-react";
+import { Search, Bus, Phone, User, Clock, MapPin, ChevronDown, X, History, Loader2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
-import { busRoutes, BusRoute } from "@/data/routes";
+import { BusRoute } from "@/data/routes";
+import { useRoutes } from "@/hooks/useRoutes";
 
 const RECENT_SEARCHES_KEY = "dhaanish_recent_searches";
 const MAX_RECENT = 8;
@@ -27,26 +28,6 @@ function clearRecentSearches() {
   localStorage.removeItem(RECENT_SEARCHES_KEY);
 }
 
-const searchData = busRoutes.flatMap((route) =>
-  route.boardingPoints.map((bp) => ({
-    routeNumber: route.routeNumber.toString(),
-    driverName: route.driverName,
-    vehicleNumber: route.vehicleNumber,
-    boardingPoint: bp.name,
-    _route: route,
-  }))
-);
-
-const fuse = new Fuse(searchData, {
-  keys: ["routeNumber", "boardingPoint", "driverName", "vehicleNumber"],
-  threshold: 0.35,
-  includeScore: true,
-});
-
-const allBoardingPoints = Array.from(
-  new Set(busRoutes.flatMap((r) => r.boardingPoints.map((bp) => bp.name).filter((n) => n !== "COLLEGE")))
-).sort();
-
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.8, y: 40, rotateX: -10 },
   visible: (i: number) => ({
@@ -59,17 +40,51 @@ const cardVariants = {
       type: "spring" as const,
       stiffness: 100,
       damping: 12,
-      mass: 1
+      mass: 1,
     },
   }),
 };
 
 export default function BusRoutesPage() {
+  const { routes: busRoutes, loading, error } = useRoutes();
+
   const [search, setSearch] = useState("");
   const [boardingFilter, setBoardingFilter] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches());
   const [showRecent, setShowRecent] = useState(false);
+
+  const allBoardingPoints = useMemo(
+    () =>
+      Array.from(
+        new Set(busRoutes.flatMap((r) => r.boardingPoints.map((bp) => bp.name).filter((n) => n !== "COLLEGE")))
+      ).sort(),
+    [busRoutes]
+  );
+
+  const searchData = useMemo(
+    () =>
+      busRoutes.flatMap((route) =>
+        route.boardingPoints.map((bp) => ({
+          routeNumber: route.routeNumber.toString(),
+          driverName: route.driverName,
+          vehicleNumber: route.vehicleNumber,
+          boardingPoint: bp.name,
+          _route: route,
+        }))
+      ),
+    [busRoutes]
+  );
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(searchData, {
+        keys: ["routeNumber", "boardingPoint", "driverName", "vehicleNumber"],
+        threshold: 0.35,
+        includeScore: true,
+      }),
+    [searchData]
+  );
 
   const filteredRoutes = useMemo(() => {
     let results: BusRoute[] = busRoutes;
@@ -81,13 +96,11 @@ export default function BusRoutesPage() {
     }
 
     if (boardingFilter) {
-      results = results.filter((r) =>
-        r.boardingPoints.some((bp) => bp.name === boardingFilter)
-      );
+      results = results.filter((r) => r.boardingPoints.some((bp) => bp.name === boardingFilter));
     }
 
     return results;
-  }, [search, boardingFilter]);
+  }, [search, boardingFilter, busRoutes, fuse]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -105,6 +118,38 @@ export default function BusRoutesPage() {
     clearRecentSearches();
     setRecentSearches([]);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-20 text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="inline-block"
+        >
+          <Loader2 className="h-10 w-10 text-primary" />
+        </motion.div>
+        <p className="mt-4 text-sm text-muted-foreground">Loading bus routes from Supabase…</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-20 text-center">
+        <AlertCircle className="mx-auto mb-3 h-10 w-10 text-destructive" />
+        <p className="text-sm font-semibold text-destructive">Failed to load routes</p>
+        <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Make sure you have set <code className="bg-secondary px-1 rounded">VITE_SUPABASE_URL</code> and{" "}
+          <code className="bg-secondary px-1 rounded">VITE_SUPABASE_ANON_KEY</code> in your{" "}
+          <code className="bg-secondary px-1 rounded">.env.local</code> file.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -158,10 +203,7 @@ export default function BusRoutesPage() {
                   <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <History className="h-3 w-3" /> Recent Searches
                   </span>
-                  <button
-                    onClick={handleClearRecent}
-                    className="text-xs text-destructive hover:underline"
-                  >
+                  <button onClick={handleClearRecent} className="text-xs text-destructive hover:underline">
                     Clear
                   </button>
                 </div>
@@ -191,7 +233,9 @@ export default function BusRoutesPage() {
         >
           <option value="">All Boarding Points</option>
           {allBoardingPoints.map((bp) => (
-            <option key={bp} value={bp}>{bp}</option>
+            <option key={bp} value={bp}>
+              {bp}
+            </option>
           ))}
         </select>
       </motion.div>
@@ -306,10 +350,7 @@ export default function BusRoutesPage() {
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <User className="h-3.5 w-3.5" /> {route.driverName}
                       </span>
-                      <a
-                        href={`tel:${route.driverPhone}`}
-                        className="flex items-center gap-1.5 text-xs text-primary"
-                      >
+                      <a href={`tel:${route.driverPhone}`} className="flex items-center gap-1.5 text-xs text-primary">
                         <Phone className="h-3.5 w-3.5" /> {route.driverPhone}
                       </a>
                     </div>
@@ -326,7 +367,10 @@ export default function BusRoutesPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{route.driverName}</p>
-                        <a href={`tel:${route.driverPhone}`} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                        <a
+                          href={`tel:${route.driverPhone}`}
+                          className="flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
                           <Phone className="h-3 w-3" /> {route.driverPhone}
                         </a>
                       </div>
@@ -345,7 +389,10 @@ export default function BusRoutesPage() {
                           transition={{ delay: idx * 0.03 }}
                           className="flex items-center gap-3 border-l-2 border-primary/20 py-2 pl-4 last:border-primary hover:bg-secondary/20 transition-colors rounded-r-lg"
                         >
-                          <div className={`h-2.5 w-2.5 rounded-full transition-all ${idx === route.boardingPoints.length - 1 ? "bg-primary scale-125" : "bg-primary/30"}`} />
+                          <div
+                            className={`h-2.5 w-2.5 rounded-full transition-all ${idx === route.boardingPoints.length - 1 ? "bg-primary scale-125" : "bg-primary/30"
+                              }`}
+                          />
                           <span className="flex-1 text-sm text-foreground">{bp.name}</span>
                           <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
                             {bp.time}
