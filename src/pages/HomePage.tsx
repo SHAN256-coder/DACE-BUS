@@ -1,21 +1,15 @@
 import { Link } from "react-router-dom";
-import { Bus, MapPin, Clock, Shield, ArrowRight, GraduationCap, Sparkles, Award, Users, Star, Globe, TrendingUp, BookOpen, Smartphone, Route, Wifi, CheckCircle } from "lucide-react";
+import { Bus, MapPin, Clock, Shield, ArrowRight, GraduationCap, Sparkles, Award, Users, Star, Globe, TrendingUp, BookOpen, Smartphone, Wifi, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { busRoutes } from "@/data/routes";
 import ParticleBackground from "@/components/ParticleBackground";
 import AnimatedBus from "@/components/AnimatedBus";
 import AnimatedCounter from "@/components/AnimatedCounter";
+import { useRoutes } from "@/hooks/useRoutes";
 
 import collegeEntranceImg from "@/assets/college_entrance.jpg";
 import busFleetImg from "@/assets/bus_fleet.png";
 import campusLifeImg from "@/assets/campus_life.png";
 
-const stats = [
-  { icon: Bus, label: "Active Buses", value: busRoutes.length.toString() },
-  { icon: MapPin, label: "Total Stops", value: busRoutes.reduce((a, r) => a + r.boardingPoints.length, 0).toString() },
-  { icon: Clock, label: "Daily Trips", value: (busRoutes.length * 2).toString() },
-  { icon: Shield, label: "Safe Rides", value: "100%" },
-];
 
 const placements = [
   { icon: TrendingUp, label: "Highest Salary", value: "₹14 LPA" },
@@ -86,6 +80,15 @@ const slideInRight = {
 };
 
 export default function HomePage() {
+  const { routes: busRoutes } = useRoutes();
+
+  const stats = [
+    { icon: Bus, label: "Active Buses", value: busRoutes.length.toString() },
+    { icon: MapPin, label: "Total Stops", value: busRoutes.reduce((a, r) => a + r.boardingPoints.length, 0).toString() },
+    { icon: Clock, label: "Daily Trips", value: (busRoutes.length * 2).toString() },
+    { icon: Shield, label: "Safe Rides", value: "100%" },
+  ];
+
   return (
     <div className="flex flex-col">
       {/* Hero */}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MessageSquare, Send, CheckCircle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { busRoutes } from "@/data/routes";
+import { useRoutes } from "@/hooks/useRoutes";
 
 interface FeedbackEntry {
   id: number;
@@ -50,6 +50,7 @@ const massiveScaleIn = {
 };
 
 export default function FeedbackPage() {
+  const { routes: busRoutes } = useRoutes();
   const [name, setName] = useState("");
   const [routeNumber, setRouteNumber] = useState("");
   const [category, setCategory] = useState("");
